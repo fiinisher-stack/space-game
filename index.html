@@ -1,1 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Полет к МКС</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0b0d17; color: white; font-family: Arial, sans-serif; touch-action: none; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; font-size: 20px; font-weight: bold; }
+        #endScreen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; border: 2px solid white; }
+        button { padding: 10px 20px; font-size: 18px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
 
+<div id="ui">Счет: <span id="score">0</span> | Скорость: <span id="speed">1x</span></div>
+
+<div id="endScreen">
+    <h1 id="endTitle">Конец игры</h1>
+    <p id="endMessage"></p>
+    <button onclick="location.reload()">Играть снова</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let gameSpeed = 3;
+    let isGameOver = false;
+    let meteorites = [];
+    const player = { x: canvas.width / 2, y: canvas.height - 100, width: 40, height: 60 };
+
+    const rocketImg = "🚀";
+    const meteorImg = "🪨";
+    const issImg = "🛰️";
+
+    function movePlayer(x) {
+        player.x = x - player.width / 2;
+        if (player.x < 0) player.x = 0;
+        if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+    }
+
+    canvas.addEventListener('mousemove', (e) => movePlayer(e.clientX));
+    canvas.addEventListener('touchmove', (e) => movePlayer(e.touches[0].clientX));
+
+    function spawnMeteor() {
+        const size = Math.random() * 30 + 30;
+        const x = Math.random() * (canvas.width - size);
+        meteorites.push({ x: x, y: -size, size: size, speed: Math.random() * 2 + gameSpeed });
+    }
+
+    function gameLoop() {
+        if (isGameOver) return;
+
+        ctx.fillStyle = "#0b0d17";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        for(let i=0; i<5; i++) ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
+
+        ctx.font = "40px Arial";
+        ctx.fillText(rocketImg, player.x, player.y + 40);
+
+        if (Math.random() < 0.05) spawnMeteor();
+
+        for (let i = 0; i < meteorites.length; i++) {
+            let m = meteorites[i];
+            m.y += m.speed;
+            
+            ctx.font = `${m.size}px Arial`;
+            ctx.fillText(meteorImg, m.x, m.y + m.size);
+
+            if (player.x < m.x + m.size && player.x + player.width > m.x && player.y < m.y + m.size && player.y + player.height > m.y) {
+                gameOver(false);
+            }
+
+            if (m.y > canvas.height) {
+                meteorites.splice(i, 1);
+                i--;
+                score++;
+                document.getElementById('score').innerText = score;
+                
+                if (score % 50 === 0) {
+                    gameSpeed += 0.5;
+                    document.getElementById('speed').innerText = gameSpeed.toFixed(1) + "x";
+                }
+
+                if (score >= 400) {
+                    gameOver(true);
+                }
+            }
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver(win) {
+        isGameOver = true;
+        document.getElementById('endScreen').style.display = 'block';
+        if (win) {
+            document.getElementById('endTitle').innerText = "МКС Достигнута! " + issImg;
+            document.getElementById('endTitle').style.color = "#4CAF50";
+            document.getElementById('endMessage').innerHTML = "Поздравляем!<br>Счет: 400<br><br><b>ВАШ ПРИЗ: Промокод SPACE2025</b>";
+        } else {
+            document.getElementById('endTitle').innerText = "Авария!";
+            document.getElementById('endTitle').style.color = "red";
+            document.getElementById('endMessage').innerText = "Ракета столкнулась с метеоритом.";
+        }
+    }
+
+    gameLoop();
+</script>
+
+</body>
+</html>
