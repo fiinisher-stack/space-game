@@ -3,119 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Полет к МКС</title>
+    <title>Полет к МКС: Миссия 65</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0b0d17; color: white; font-family: Arial, sans-serif; touch-action: none; }
-        canvas { display: block; }
-        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; font-size: 20px; font-weight: bold; }
-        #endScreen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; border: 2px solid white; }
-        button { padding: 10px 20px; font-size: 18px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; margin-top: 10px; }
+        /* Обновленный фон - глубокий космос */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); 
+            color: white; 
+            font-family: 'Arial', sans-serif; 
+            touch-action: none; /* Отключаем стандартные жесты браузера */
+        }
+        canvas { display: block; cursor: none; /* Скрываем курсор над игрой для погружения */ }
+        #ui { position: absolute; top: 20px; left: 20px; z-index: 10; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        
+        /* Стилизация финального экрана */
+        #endScreen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(11, 13, 23, 0.95); padding: 40px; border-radius: 20px; border: 3px solid #4CAF50; box-shadow: 0 0 30px rgba(76, 175, 80, 0.5); z-index: 20; max-width: 80%; }
+        #endTitle { margin: 0 0 20px 0; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; }
+        #endMessage { font-size: 20px; line-height: 1.5; margin-bottom: 30px; }
+        
+        button { padding: 15px 40px; font-size: 20px; cursor: pointer; background: linear-gradient(to bottom, #4CAF50, #45a049); color: white; border: none; border-radius: 50px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-<div id="ui">Счет: <span id="score">0</span> | Скорость: <span id="speed">1x</span></div>
+<div id="ui">Дистанция до МКС: <span id="score">0</span> км | Скорость: <span id="speed">1.0x</span> Маха</div>
 
 <div id="endScreen">
     <h1 id="endTitle">Конец игры</h1>
     <p id="endMessage"></p>
-    <button onclick="location.reload()">Играть снова</button>
+    <button onclick="location.reload()">Старт новой миссии</button>
 </div>
 
 <canvas id="gameCanvas"></canvas>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    let score = 0;
-    let gameSpeed = 3;
-    let isGameOver = false;
-    let meteorites = [];
-    const player = { x: canvas.width / 2, y: canvas.height - 100, width: 40, height: 60 };
-
-    const rocketImg = "🚀";
-    const meteorImg = "🪨";
-    const issImg = "🛰️";
-
-    function movePlayer(x) {
-        player.x = x - player.width / 2;
-        if (player.x < 0) player.x = 0;
-        if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    }
-
-    canvas.addEventListener('mousemove', (e) => movePlayer(e.clientX));
-    canvas.addEventListener('touchmove', (e) => movePlayer(e.touches[0].clientX));
-
-    function spawnMeteor() {
-        const size = Math.random() * 30 + 30;
-        const x = Math.random() * (canvas.width - size);
-        meteorites.push({ x: x, y: -size, size: size, speed: Math.random() * 2 + gameSpeed });
-    }
-
-    function gameLoop() {
-        if (isGameOver) return;
-
-        ctx.fillStyle = "#0b0d17";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "white";
-        for(let i=0; i<5; i++) ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
-
-        ctx.font = "40px Arial";
-        ctx.fillText(rocketImg, player.x, player.y + 40);
-
-        if (Math.random() < 0.05) spawnMeteor();
-
-        for (let i = 0; i < meteorites.length; i++) {
-            let m = meteorites[i];
-            m.y += m.speed;
-            
-            ctx.font = `${m.size}px Arial`;
-            ctx.fillText(meteorImg, m.x, m.y + m.size);
-
-            if (player.x < m.x + m.size && player.x + player.width > m.x && player.y < m.y + m.size && player.y + player.height > m.y) {
-                gameOver(false);
-            }
-
-            if (m.y > canvas.height) {
-                meteorites.splice(i, 1);
-                i--;
-                score++;
-                document.getElementById('score').innerText = score;
-                
-                if (score % 50 === 0) {
-                    gameSpeed += 0.5;
-                    document.getElementById('speed').innerText = gameSpeed.toFixed(1) + "x";
-                }
-
-                if (score >= 400) {
-                    gameOver(true);
-                }
-            }
-        }
-        requestAnimationFrame(gameLoop);
-    }
-
-    function gameOver(win) {
-        isGameOver = true;
-        document.getElementById('endScreen').style.display = 'block';
-        if (win) {
-            document.getElementById('endTitle').innerText = "МКС Достигнута! " + issImg;
-            document.getElementById('endTitle').style.color = "#4CAF50";
-            document.getElementById('endMessage').innerHTML = "Поздравляем!<br>Счет: 400<br><br><b>ВАШ ПРИЗ: Промокод SPACE2025</b>";
-        } else {
-            document.getElementById('endTitle').innerText = "Авария!";
-            document.getElementById('endTitle').style.color = "red";
-            document.getElementById('endMessage').innerText = "Ракета столкнулась с метеоритом.";
-        }
-    }
-
-    gameLoop();
-</script>
-
-</body>
-</html>
+    // === ВСТРОЕННЫЕ АСЕТЫ (КАРТИНКИ) ===
+    // Используем Base64 для 3D-эффекта в одном файле
+    const rocketSrc = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABgCAQAAACNvfK1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/Dk72yQAAAAHdElNRQfpAhAJEiPzZzW9AAAD7klEQVRo3u2ab2gcRRzHf7O3l16S9i4xJtGk1qSNNm1t0sT0QxVFrIiCiPjGC/0gCMZX8Y0iIvjGi6KCXxQRKSoq+EEx1BapRVM1tRptakxT0+QuyV3u7u3H7C8XkjvS3e5t78Z9P2/39mZ+zO7O/GZmF5hjjjnm+P+hC9R93/1R+5J52X5pE6r7f677gT3tFfbUfR2Q19Z5wD5gS/v3+jngU9f5qS1jD7Qf6eeA11zn57aA3dF+sp8DXneVv7Al7DutZk4G3HWVH7fF7Jut3r0Z8LGL/IQtY99szX5uBtxzkZ+w5ezbrd59GfC+S/xJeyW705p9bQb84BI/aYvZP1uzz8+AD1zhp2wZ+3ar93AGPON8n7Vl7C+s3mcD4AvnebfNZyutZpYDQHfOV9v97C7rd2kAAOd83hax9Vbvh956XF7J6d02l62zmrkOAHY7x9ttPnum1bvS6z3gHNe1R9jD1uzeCwDfd37P2BPsW1Zz2328TznH1W0R+57V+1AAHHOOt9uT7L7WrFp/xznHlW0J+67V+2UAMOUcr7WH2WNWc897eMec4zP2VXZ3a3Zp7e/6/H6hzdhPrNlD/rY/6BzXtefYI63ebX7d55zjI/Zldl/rt9X+E+f4Z3sN+6rV+30AfOgc19gj7Dur+aO1/5hz/K09wh5qzW70+v/pHD9sX2X3W83N1v6TzvG1No/dazUz4vfd6Ry32kPsvtbsc17/jOd4v32VPWw111r7F5zjQXuEfctq/uy1P+UcN9vD7G6reZfXv8dz3GwPse9azZ+8/j+d4y/tdXaP1bxq7V/1HL/bHuygNTvk5z3tHK+zPew+q5nx9p+N+z7Y32V3Ws1P1v4TznFdW8AOWr3L1/455/iU/SW712p+bO1f9RxXtgXsYat3r5/3jHN8yr7MvmE1F1v7lzzHDW0e+4HV+0uA57Rz3GAPs0es5idr/yXnuNkeZN+yZpfX/pTn+Jg9zO6wZg9GgC9c5l32KPuO1Vxp7S85x0faA+xrVvPntf+C53iXfcUesZofAvx83l32aHa/NfvE639pL/740a5gN6xmt7U/6RxvswfYY1YzlQG+6Byfstuze6zm1lAAM57jj+wB9l2ruTUUwB9Ocbt9hb1sNX+NAlhxjj+yB7G7rWZqFIDTnOP/7AHsLqu5Iwpg0nP8od3Pvm01fxkF8JdzfMpuw+6ymjtDAVz1HH9iX2GvsZpfRwE4zTk+aV+y+63m1lAAVz3H/+pLdi+2x63Z3VEAPr8n7Q7s7jV2r9X8bRTAnH83P8Occ8wxx3x2/AeF9eE6Y15r/QAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyNS0xMi0xNlQwODowOTozMCswn+6yAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI1LTEyLTE2VDA4:MDk:MzArF5k0KAAAAABJRU5ErkJggg==';
+    const meteorSrc1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAACPgx+QAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/Dk72yQAAAAHdElNRQfpAhAJFAdL5y/KAAACdklEQVRo3u3ZzUtUURgH8F+jDqG1nAhd2yJqU7QoiBa5GsiFkE0tCqJdtI/8C4K2bZt2UZtqIahV0a42bYt2tQzaWBBkC/6CDBJqiI4299zjzHPvnXnj3Jl7v7M757z8Pud5znNnLoS85S1/U0m3C047ap/d/v9S6q8YcM4eT/3g54B+p332jWn615jwyF5/B1wyZJ+N1n5dCT1Ouuq4aW1xwlE7Nlrv7x2wwyGvHbXbI0E4od8uX4+o7XfK/pBLBnz1yH4/7IARr52wy3o/Z8Qle1y3wXo/bshj+13ww0o456yLzltvtR834rW9TtpivR8w4pZ9ztlotR8wZK9jNlitJ4w47IibNlpt1IB9jthrpx8E4aAzzjpmrR/S4ZBzrjpitV6333FHXbHWJitM6HPMBZuC8Jg+l531Wq8xoddxN2yw3h9R2+O0645Y62G1XbTTej9kxCV7nbTWat9vwgXb7PaDIIzpd9Uha33AhH3OuuKgtb7PhA7H3fR71Fq1HXbA9mDsN+yA975abbXvMeK4H1Zb63uN6XbB7qD8N+qgDdf8stJ/YI+73lhrra/b77gDbtjotB8w4q39vrDWej9oQp8LTvpooa0wY7cjHrputbVOGDPlH2+Y0OOUu4G4v2vEF95576211nptLthl2E6rnfK7y8664Ie1XmPCb1/t8tFqa73fhB2+ee+ttdb7gQvW2G2P9XbY67RDrjpiq/2MCYfscdk6q611wrDLjthrj932++C3Hdb6QZ36XHXCWj846pBDrjtoqb9q3AE3vHPSauv9oF4X7PXSfmuttU74D5j8L9rbg6p1AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI1LTEyLTE2VDA4OjA5OjQ2K2wwNTEAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjUtMTItMTZUMDg6MDk6NDYrdzM03AAAAABJRU5ErkJggg==';
+    const meteorSrc2 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAACPgx+QAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/Dk72yQAAAAHdElNRQfpAhAJFAu3F5zKAAAC3UlEQVRo3u2ay0tVURTGf0/N0jS1jKKEIipSMpQG1SRaFC1qYWA4qE0tKqJNaB/5FwSt2zZt
